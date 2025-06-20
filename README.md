@@ -1,5 +1,5 @@
 # AUA Summer Engineering School
-## Climate Monitor
+### Climate Monitor
 
 This Arduino project utilizes a number of digital and analog sensors as well as radio modules.
 It lets you to observe, transfer and visualize the properties below...
@@ -10,6 +10,9 @@ It lets you to observe, transfer and visualize the properties below...
 - Wind Direction
 
 
+</br>
+</br>
+</br>
 
 
 ### Contributors
