@@ -4,16 +4,25 @@
 #include <BMP180DEFS.h>
 #include <MetricSystem.h>
 #include <Wire.h>
+#include <SPI.h>
+#include "printf.h"
+#include "RF24.h"
 
+#define CE_PIN 7
+#define CSN_PIN 8
 #define DHT_PIN 4
-#define PHTRST_PIN A1
+#define PHOTORESISTANCE_PIN A1
+#define RADIO_PAYLOAD_SIZE 32
+#define SLAVE_ADDRESS 0x42
 
 DHT11 dht11(DHT_PIN);
 BMP180 bmp180;
 QMC5883LCompass compass;
+RF24 radio(CE_PIN, CSN_PIN);
 
 int counter = 0;
-
+const byte address[6] = "1Node";
+byte payload[32] = {};
 
 class SensorsSetup {
     public: void setupAllSensors(void) {
@@ -22,6 +31,7 @@ class SensorsSetup {
         this->setupBMP180();
         this->setupHMC5883L();
         this->setupPhotoresistance();
+        this->setupTXRadio();
         Serial.println("Sensors' setup done...");
     }
 
@@ -46,10 +56,22 @@ class SensorsSetup {
     }
 
     private: void setupPhotoresistance() {
-        pinMode(PHTRST_PIN, INPUT);
+        pinMode(PHOTORESISTANCE_PIN, INPUT);
     }
 
+    private: void setupTXRadio() {
+        Serial.println("radio setup start...");
+        if (!radio.begin()) {
+            Serial.println(F("radio hardware is not responding!!"));
+            while (1); // hold in infinite loop
+        }
 
+        radio.setPALevel(RF24_PA_LOW);
+        radio.setPayloadSize(RADIO_PAYLOAD_SIZE);
+        radio.openWritingPipe(address);
+        radio.stopListening();
+        Serial.println("radio setup done...");
+    }
 };
 
 class SensorsValues {
@@ -103,7 +125,7 @@ class SensorsValues {
     }
 
     public: int getPhotoresistance(void) {
-        int photoResistance = analogRead(PHTRST_PIN);
+        int photoResistance = analogRead(PHOTORESISTANCE_PIN);
         Serial.print("\nPhotoresistance value: ");
         Serial.print(photoResistance);
         return photoResistance;
@@ -113,7 +135,7 @@ class SensorsValues {
 
 void setup() {
     // put your setup code here, to run once:
-    Serial.begin(9600);
+    Serial.begin(115200);
     Serial.println("SERIAL BEGIN");
 
     SensorsSetup sensorsSetup;
@@ -136,4 +158,34 @@ void loop() {
 
     sensorsValues.getPhotoresistance();
     sensorsValues.getCompassHeadingDegree();
+
+    // TODO: convert each sensor value into byte chunks (from a 4 byte integer to four separated bytes) and to the payload according to the convention below
+    // Packet structure
+    // 1byte - 0x42
+    // 4bytes (float) - wind direction
+    // 4bytes (float) - wind speed
+    // 4bytes (float) - air pressure
+    // 4bytes (float) - air temperature
+    // 1byte (int8) - air humidity
+
+    unsigned long start_timer = micros();
+    bool report = radio.write(&payload, RADIO_PAYLOAD_SIZE);
+    unsigned long end_timer = micros();
+
+    if (report) {
+        Serial.print(F("Transmission successful! "));
+        Serial.print(F("Time to transmit = "));
+        Serial.print(end_timer - start_timer);
+        Serial.print(F(" us. Sent: "));
+        for (int i = 0; i < 32; i++) {
+            Serial.print(payload[i]);
+            Serial.print(" ");
+        }
+        Serial.println();
+    } else {
+        Serial.println(F("Transmission failed or timed out"));
+    }
+
+    delay(1000);
+
 }
