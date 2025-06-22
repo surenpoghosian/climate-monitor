@@ -7,7 +7,7 @@ It lets you to observe, transfer and visualize the properties below...
 - Temperature
 - Humidity
 - Atmosphere Pressure
-- Wind Direction
+- Wind Speed and Direction
 
 
 </br>
