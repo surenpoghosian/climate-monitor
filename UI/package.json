@@ -1,0 +1,24 @@
+{
+  "name": "Climate Monitor",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "scripts": {
+    "copy-html": "cp src/index.html dist/",
+    "build": "tsc && npm run copy-html",
+    "start": "npm run build && electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "electron": "^36.5.0",
+    "electron-reload": "^2.0.0-alpha.1"
+  },
+  "dependencies": {
+    "@types/node": "^24.0.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
