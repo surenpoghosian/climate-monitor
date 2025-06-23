@@ -13,7 +13,7 @@
 #define DHT_PIN 4
 #define PHOTORESISTANCE_PIN A1
 #define RADIO_PAYLOAD_SIZE 1
-#define SLAVE_ADDRESS 0x42
+#define DEVICE_ADDRESS 0x42
 
 
 DHT11 dht11(DHT_PIN);
@@ -34,6 +34,23 @@ void floatToByteArray(float f, byte* ret) {
     ret[i] = (asInt >> 8 * i) & 0xFF;
   }
 }
+
+byte* preparePayload(float temperature, float windSpeed, float pressure, float headingDegrees, int humidity) {
+  // Packet structure
+  // 1byte - 0x42                             index = 0
+  // 4bytes (float) - wind direction          index = 1-4
+  // 4bytes (float) - wind speed              index = 5-8
+  // 4bytes (float) - air pressure            index = 9-13
+  // 4bytes (float) - air temperature         index = 14-17
+  // 1byte (int8) - air humidity              index = 18
+  floatToByteArray(windSpeed, payload + 1);
+  floatToByteArray(headingDegrees, payload + 5);
+  floatToByteArray(pressure, payload + 9);
+  floatToByteArray(temperature, payload + 13);
+  payload[17] = (int8_t)humidity;
+  return payload;
+}
+
 
 class SensorsSetup {
 public:
@@ -88,6 +105,10 @@ private:
     radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
     radio.setPayloadSize(sizeof(payload));
     radio.stopListening(address[0]);
+
+    payload[0] = DEVICE_ADDRESS;
+    payload[18] = closingTag[0];
+    payload[19] = closingTag[1];
 
     Serial.println("radio setup done...");
   }
@@ -167,10 +188,6 @@ void setup() {
     // some boards need to wait to ensure access to serial over USB
   }
 
-  payload[0] = 0x42;
-  payload[18] = closingTag[0];
-  payload[19] = closingTag[1];
-
   SensorsSetup sensorsSetup;
   sensorsSetup.setupAllSensors();
 }
@@ -180,35 +197,22 @@ void loop() {
   int humidity = sensorsValues.getHumidity();
   float temperature = sensorsValues.getTemperature();
   float pressure = sensorsValues.getPressure();
-  float degree = sensorsValues.getCompassHeadingDegree();
+  float headingDegrees = sensorsValues.getCompassHeadingDegree();
 
-  // TODO: convert each sensor value into byte chunks (from a 4 byte integer to four separated bytes) and to the payload according to the convention below
-  // Packet structure
-  // 1byte - 0x42
-  // 4bytes (float) - wind direction
-  // 4bytes (float) - wind speed
-  // 4bytes (float) - air pressure
-  // 4bytes (float) - air temperature
-  // 1byte (int8) - air humidity
-
-  floatToByteArray(temperature, payload + 13);
-  floatToByteArray(pressure, payload + 9);
-  floatToByteArray(degree, payload + 5);
-  payload[17] = (int8_t)humidity;
-
+  byte* payloadToSend = preparePayload(temperature, 69.0, pressure, headingDegrees, humidity);
 
   // This device is a TX node
-  unsigned long start_timer = micros();                  // start the timer
-  bool report = radio.write(&payload, sizeof(payload));  // transmit & save the report
-  unsigned long end_timer = micros();                    // end the timer
+  unsigned long start_timer = micros();
+  bool report = radio.write(&payloadToSend, sizeof(payloadToSend));
+  unsigned long end_timer = micros();
 
   if (report) {
-    Serial.print(F("Transmission successful! "));  // payload was delivered
+    Serial.print(F("Transmission successful! "));
     Serial.print(F("Time to transmit = "));
-    Serial.print(end_timer - start_timer);  // print the timer result
+    Serial.print(end_timer - start_timer);
     Serial.print(F(" us. Sent: "));
   } else {
-    Serial.println(F("Transmission failed or timed out"));  // payload was not delivered
+    Serial.println(F("Transmission failed or timed out"));
   }
 
   delay(1000);
