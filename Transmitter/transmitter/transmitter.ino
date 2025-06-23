@@ -15,14 +15,25 @@
 #define RADIO_PAYLOAD_SIZE 1
 #define SLAVE_ADDRESS 0x42
 
+
 DHT11 dht11(DHT_PIN);
 BMP180 bmp180;
 QMC5883LCompass compass;
 RF24 radio(CE_PIN, CSN_PIN);
 
-int counter = 0;
+
 uint8_t address[][6] = { "1Node" };
-float payload = 0.0;
+byte closingTag[2] = { 0xD5, 0xB3 };
+byte payload[20];
+
+void floatToByteArray(float f, byte* ret) {
+  unsigned int asInt = *((int*)&f);
+
+  int i;
+  for (i = 0; i < 4; i++) {
+    ret[i] = (asInt >> 8 * i) & 0xFF;
+  }
+}
 
 class SensorsSetup {
 public:
@@ -133,8 +144,9 @@ public:
     // Convert radians to degrees for readability.
     float headingDegrees = heading * 180 / M_PI;
 
-    Serial.print("Heading (degrees): ");
+    Serial.print("\nHeading (degrees): ");
     Serial.println(headingDegrees);
+    return headingDegrees;
   }
 
 public:
@@ -155,25 +167,20 @@ void setup() {
     // some boards need to wait to ensure access to serial over USB
   }
 
+  payload[0] = 0x42;
+  payload[18] = closingTag[0];
+  payload[19] = closingTag[1];
+
   SensorsSetup sensorsSetup;
   sensorsSetup.setupAllSensors();
 }
 
-
 SensorsValues sensorsValues;
 void loop() {
-  counter++;
-
-  if (counter == 5) {
-    sensorsValues.getHumidity();
-    sensorsValues.getTemperature();
-    sensorsValues.getPressure();
-    sensorsValues.getPhotoresistance();
-    counter = 0;
-  }
-
-  sensorsValues.getPhotoresistance();
-  sensorsValues.getCompassHeadingDegree();
+  int humidity = sensorsValues.getHumidity();
+  float temperature = sensorsValues.getTemperature();
+  float pressure = sensorsValues.getPressure();
+  float degree = sensorsValues.getCompassHeadingDegree();
 
   // TODO: convert each sensor value into byte chunks (from a 4 byte integer to four separated bytes) and to the payload according to the convention below
   // Packet structure
@@ -184,20 +191,22 @@ void loop() {
   // 4bytes (float) - air temperature
   // 1byte (int8) - air humidity
 
-  // payload[0] = 0x42;
+  floatToByteArray(temperature, payload + 13);
+  floatToByteArray(pressure, payload + 9);
+  floatToByteArray(degree, payload + 5);
+  payload[17] = (int8_t)humidity;
+
 
   // This device is a TX node
-  unsigned long start_timer = micros();                // start the timer
-  bool report = radio.write(&payload, sizeof(float));  // transmit & save the report
-  unsigned long end_timer = micros();                  // end the timer
+  unsigned long start_timer = micros();                  // start the timer
+  bool report = radio.write(&payload, sizeof(payload));  // transmit & save the report
+  unsigned long end_timer = micros();                    // end the timer
 
   if (report) {
     Serial.print(F("Transmission successful! "));  // payload was delivered
     Serial.print(F("Time to transmit = "));
     Serial.print(end_timer - start_timer);  // print the timer result
     Serial.print(F(" us. Sent: "));
-    Serial.println(payload);  // print payload sent
-    payload += 0.01;          // increment float payload
   } else {
     Serial.println(F("Transmission failed or timed out"));  // payload was not delivered
   }
