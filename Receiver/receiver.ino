@@ -32,7 +32,7 @@ void loop() {
       uint8_t bytes = radio.getPayloadSize();
       radio.read(&payload, bytes);
       for(uint8_t i = 0;i < payload_size;i++){
-        Serial.print(payload[i]);
+        Serial.write(payload[i]);
       }
     }
 
