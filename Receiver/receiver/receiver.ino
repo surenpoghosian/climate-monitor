@@ -7,7 +7,8 @@
 
 RF24 radio(CE_PIN, CSN_PIN);
 uint8_t address[6] = "1Node";
-byte payload[20] = {0};
+uint8_t payload[20] = {0};
+uint8_t payload_size = sizeof(payload);
 
 void setup() {
 
@@ -20,7 +21,7 @@ void setup() {
   }
   
   radio.setPALevel(RF24_PA_LOW);
-  radio.setPayloadSize(20);
+  radio.setPayloadSize(payload_size);
   radio.openReadingPipe(1, address);
   radio.startListening();
 }
@@ -30,7 +31,9 @@ void loop() {
     if (radio.available(&pipe)) {
       uint8_t bytes = radio.getPayloadSize();
       radio.read(&payload, bytes);
-      Serial.write(payload, 20);
+      for(uint8_t i = 0;i < payload_size;i++){
+        Serial.write(payload[i]);
+      }
     }
 
-}  // loop
+} 
