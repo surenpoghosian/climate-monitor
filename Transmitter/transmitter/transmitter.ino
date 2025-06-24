@@ -43,23 +43,6 @@ void floatToByteArray(float f, byte* ret) {
   }
 }
 
-byte* preparePayload(float temperature, float windSpeed, float pressure, float headingDegrees, int humidity) {
-  // Packet structure
-  // 1byte - 0x42                             index = 0
-  // 4bytes (float) - wind direction          index = 1-4
-  // 4bytes (float) - wind speed              index = 5-8
-  // 4bytes (float) - air pressure            index = 9-13
-  // 4bytes (float) - air temperature         index = 14-17
-  // 1byte (int8) - air humidity              index = 18
-  floatToByteArray(windSpeed, payload + 1);
-  floatToByteArray(headingDegrees, payload + 5);
-  floatToByteArray(pressure, payload + 9);
-  floatToByteArray(temperature, payload + 13);
-  payload[17] = (int8_t)humidity;
-  return payload;
-}
-
-
 class SensorsSetup {
 public:
   void setupAllSensors(void) {
@@ -113,10 +96,6 @@ private:
     radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
     radio.setPayloadSize(sizeof(payload));
     radio.stopListening(address[0]);
-
-    payload[0] = DEVICE_ADDRESS;
-    payload[18] = closingTag[0];
-    payload[19] = closingTag[1];
 
     Serial.println("radio setup done...");
   }
@@ -188,10 +167,13 @@ public:
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+<<<<<<< HEAD
   Serial.println("SERIAL BEGIN");
   // while (!Serial) {
   //   // some boards need to wait to ensure access to serial over USB
   // }
+=======
+>>>>>>> 2aaeb76032350e7d71f0508392d992f8d48daa23
 
   SensorsSetup sensorsSetup;
   sensorsSetup.setupAllSensors();
@@ -199,11 +181,40 @@ void setup() {
 
 SensorsValues sensorsValues;
 void loop() {
+<<<<<<< HEAD
   int photores = sensorsValues.getPhotoresistance();
   if (photoresistor_last_on == 0){
     if(photores > PHOTORESISTOR_THRESHOLD){
       photoresistor_last_on = millis();
     }
+=======
+  int humidity = sensorsValues.getHumidity();
+  float temperature = sensorsValues.getTemperature();
+  float pressure = sensorsValues.getPressure();
+  float headingDegrees = sensorsValues.getCompassHeadingDegree();
+
+  payload[0] = DEVICE_ADDRESS;
+  payload[18] = closingTag[0];
+  payload[19] = closingTag[1];
+
+  floatToByteArray(69.0, payload + 1);
+  floatToByteArray(headingDegrees, payload + 5);
+  floatToByteArray(pressure, payload + 9);
+  floatToByteArray(temperature, payload + 13);
+  payload[17] = (int8_t)humidity;
+
+
+  // This device is a TX node
+  unsigned long start_timer = micros();
+  bool report = radio.write(&payload, sizeof(payload));
+  unsigned long end_timer = micros();
+
+  if (report) {
+    Serial.print(F("Transmission successful! "));
+    Serial.print(F("Time to transmit = "));
+    Serial.print(end_timer - start_timer);
+    Serial.print(F(" us. Sent: "));
+>>>>>>> 2aaeb76032350e7d71f0508392d992f8d48daa23
   } else {
     if(photores < PHOTORESISTOR_THRESHOLD){
       speed = (float)SPEED_CALIBRATION/(millis()-photoresistor_last_on);
