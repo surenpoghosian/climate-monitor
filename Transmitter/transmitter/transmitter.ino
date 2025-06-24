@@ -14,13 +14,21 @@
 #define PHOTORESISTANCE_PIN A1
 #define RADIO_PAYLOAD_SIZE 1
 #define DEVICE_ADDRESS 0x42
-
+#define PHOTORESISTOR_THRESHOLD 200
+#define SPEED_CALIBRATION 10000
 
 DHT11 dht11(DHT_PIN);
 BMP180 bmp180;
 QMC5883LCompass compass;
 RF24 radio(CE_PIN, CSN_PIN);
 
+int humidity = 0;
+float temperature = 0;
+float pressure = 0;
+float headingDegrees = 0;
+float speed = 0;
+uint16_t loops = 0;
+unsigned long photoresistor_last_on = 0;
 
 uint8_t address[][6] = { "1Node" };
 byte closingTag[2] = { 0xD5, 0xB3 };
@@ -118,27 +126,27 @@ class SensorsValues {
 public:
   int getHumidity(void) {
     int humidity = dht11.readHumidity();
-    Serial.print("Humidity: ");
-    Serial.print(humidity);
-    Serial.println(" %");
+    // Serial.print("Humidity: ");
+    // Serial.print(humidity);
+    // Serial.println(" %");
     return humidity;
   }
 
 public:
   float getTemperature(void) {
     float temperature = bmp180.readTemperature();
-    Serial.print("Temperature: ");
-    Serial.print(temperature);
-    Serial.println(" °C");
+    // Serial.print("Temperature: ");
+    // Serial.print(temperature);
+    // Serial.println(" °C");
     return temperature;
   }
 
 public:
   float getPressure(void) {
     float pressure = bmp180.readPressure();
-    Serial.print("Pressure: ");
-    Serial.print(pressure);
-    Serial.println(" Pa");
+    // Serial.print("Pressure: ");
+    // Serial.print(pressure);
+    // Serial.println(" Pa");
     return pressure;
   }
 
@@ -164,17 +172,14 @@ public:
 
     // Convert radians to degrees for readability.
     float headingDegrees = heading * 180 / M_PI;
-
-    Serial.print("\nHeading (degrees): ");
-    Serial.println(headingDegrees);
     return headingDegrees;
   }
 
 public:
   int getPhotoresistance(void) {
     int photoResistance = analogRead(PHOTORESISTANCE_PIN);
-    Serial.print("\nPhotoresistance value: ");
-    Serial.print(photoResistance);
+    // Serial.print("\nPhotoresistance value: ");
+    // Serial.print(photoResistance);
     return photoResistance;
   }
 };
@@ -184,9 +189,9 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("SERIAL BEGIN");
-  while (!Serial) {
-    // some boards need to wait to ensure access to serial over USB
-  }
+  // while (!Serial) {
+  //   // some boards need to wait to ensure access to serial over USB
+  // }
 
   SensorsSetup sensorsSetup;
   sensorsSetup.setupAllSensors();
@@ -194,26 +199,49 @@ void setup() {
 
 SensorsValues sensorsValues;
 void loop() {
-  int humidity = sensorsValues.getHumidity();
-  float temperature = sensorsValues.getTemperature();
-  float pressure = sensorsValues.getPressure();
-  float headingDegrees = sensorsValues.getCompassHeadingDegree();
-
-  byte* payloadToSend = preparePayload(temperature, 69.0, pressure, headingDegrees, humidity);
-
-  // This device is a TX node
-  unsigned long start_timer = micros();
-  bool report = radio.write(&payloadToSend, sizeof(payloadToSend));
-  unsigned long end_timer = micros();
-
-  if (report) {
-    Serial.print(F("Transmission successful! "));
-    Serial.print(F("Time to transmit = "));
-    Serial.print(end_timer - start_timer);
-    Serial.print(F(" us. Sent: "));
+  int photores = sensorsValues.getPhotoresistance();
+  if (photoresistor_last_on == 0){
+    if(photores > PHOTORESISTOR_THRESHOLD){
+      photoresistor_last_on = millis();
+    }
   } else {
-    Serial.println(F("Transmission failed or timed out"));
+    if(photores < PHOTORESISTOR_THRESHOLD){
+      speed = (float)SPEED_CALIBRATION/(millis()-photoresistor_last_on);
+      photoresistor_last_on = 0;
+    }
   }
 
-  delay(1000);
+  loops++;
+  if(loops > 1000){
+    humidity = sensorsValues.getHumidity();
+    temperature = sensorsValues.getTemperature();
+    pressure = sensorsValues.getPressure();
+    headingDegrees = sensorsValues.getCompassHeadingDegree();
+
+
+    Serial.print("Humidity: ");
+    Serial.print(humidity);
+    Serial.println(" %");
+    Serial.print("Temperature: ");
+    Serial.print(temperature);
+    Serial.println(" °C");
+    Serial.print("Pressure: ");
+    Serial.print(pressure);
+    Serial.println(" Pa");
+    Serial.print("Heading (degrees): ");
+    Serial.println(headingDegrees);
+    Serial.print("Speed: ");
+    Serial.println(speed);
+
+
+    byte* payloadToSend = preparePayload(temperature, speed, pressure, headingDegrees, humidity);
+
+    if (radio.write(&payloadToSend, sizeof(payloadToSend))) {
+      Serial.print(F("Transmission successful! "));
+    } else {
+      Serial.println(F("Transmission failed or timed out"));
+    }
+
+    loops = 0;
+  }
 }
