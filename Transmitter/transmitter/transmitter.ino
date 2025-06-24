@@ -214,7 +214,6 @@ void loop() {
     Serial.print(F("Time to transmit = "));
     Serial.print(end_timer - start_timer);
     Serial.print(F(" us. Sent: "));
->>>>>>> 2aaeb76032350e7d71f0508392d992f8d48daa23
   } else {
     if(photores < PHOTORESISTOR_THRESHOLD){
       speed = (float)SPEED_CALIBRATION/(millis()-photoresistor_last_on);
