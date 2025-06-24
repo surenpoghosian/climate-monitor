@@ -105,8 +105,8 @@ private:
 class SensorsValues {
 public:
   int getHumidity(void) {
+
     return dht11.readHumidity();
-    ;
   }
 
 public:
@@ -148,13 +148,14 @@ public:
 
 void setup() {
   Serial.begin(115200);
-
+  
   SensorsSetup sensorsSetup;
   sensorsSetup.setupAllSensors();
 }
 
 SensorsValues sensorsValues;
 void loop() {
+
 
   int photores = sensorsValues.getPhotoresistance();
   if (photoresistor_last_on == 0) {
@@ -164,7 +165,6 @@ void loop() {
   } else {
     if (photores < PHOTORESISTOR_THRESHOLD) {
       speed = (float)SPEED_CALIBRATION / (millis() - photoresistor_last_on);
-      photoresistor_last_on = 0;
     }
   }
 
