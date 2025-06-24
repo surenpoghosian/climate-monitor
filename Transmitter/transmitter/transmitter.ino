@@ -35,23 +35,6 @@ void floatToByteArray(float f, byte* ret) {
   }
 }
 
-byte* preparePayload(float temperature, float windSpeed, float pressure, float headingDegrees, int humidity) {
-  // Packet structure
-  // 1byte - 0x42                             index = 0
-  // 4bytes (float) - wind direction          index = 1-4
-  // 4bytes (float) - wind speed              index = 5-8
-  // 4bytes (float) - air pressure            index = 9-13
-  // 4bytes (float) - air temperature         index = 14-17
-  // 1byte (int8) - air humidity              index = 18
-  floatToByteArray(windSpeed, payload + 1);
-  floatToByteArray(headingDegrees, payload + 5);
-  floatToByteArray(pressure, payload + 9);
-  floatToByteArray(temperature, payload + 13);
-  payload[17] = (int8_t)humidity;
-  return payload;
-}
-
-
 class SensorsSetup {
 public:
   void setupAllSensors(void) {
@@ -105,10 +88,6 @@ private:
     radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
     radio.setPayloadSize(sizeof(payload));
     radio.stopListening(address[0]);
-
-    payload[0] = DEVICE_ADDRESS;
-    payload[18] = closingTag[0];
-    payload[19] = closingTag[1];
 
     Serial.println("radio setup done...");
   }
@@ -183,10 +162,6 @@ public:
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  Serial.println("SERIAL BEGIN");
-  while (!Serial) {
-    // some boards need to wait to ensure access to serial over USB
-  }
 
   SensorsSetup sensorsSetup;
   sensorsSetup.setupAllSensors();
@@ -199,11 +174,20 @@ void loop() {
   float pressure = sensorsValues.getPressure();
   float headingDegrees = sensorsValues.getCompassHeadingDegree();
 
-  byte* payloadToSend = preparePayload(temperature, 69.0, pressure, headingDegrees, humidity);
+  payload[0] = DEVICE_ADDRESS;
+  payload[18] = closingTag[0];
+  payload[19] = closingTag[1];
+
+  floatToByteArray(69.0, payload + 1);
+  floatToByteArray(headingDegrees, payload + 5);
+  floatToByteArray(pressure, payload + 9);
+  floatToByteArray(temperature, payload + 13);
+  payload[17] = (int8_t)humidity;
+
 
   // This device is a TX node
   unsigned long start_timer = micros();
-  bool report = radio.write(&payloadToSend, sizeof(payloadToSend));
+  bool report = radio.write(&payload, sizeof(payload));
   unsigned long end_timer = micros();
 
   if (report) {
