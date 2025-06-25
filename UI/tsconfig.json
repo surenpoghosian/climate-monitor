@@ -8,8 +8,8 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strictPropertyInitialization": false
-
+    "strictPropertyInitialization": false,
+    "types": ["node", "electron"]
   },
 
   "include": ["src/**/*"],

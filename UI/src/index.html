@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 <html>
-  <head><title>Climate Monitor</title></head>
+  <head>
+    <title>Climate Monitor</title>
+  </head>
   <body>
-    <h1>Electron test</h1>
+    <div>
+      <h1>Serial Monitor</h1>
+      <select id="portSelect"></select>
+      <button id="retry">Retry</button>
+      <button id="connectBtn">Connect</button>
+      <pre id="output"></pre>
+    </div>
+    <script type="module" src="renderer.js"></script>
   </body>
 </html>
