@@ -49,11 +49,19 @@ ipcMain.handle('serial:getBaudRates', async () => {
 });
 
 ipcMain.handle('serial:connect', async (_e, port: string, baudRate: number) => {
-  SerialManager.setPort(port);
-  SerialManager.setBaudRate(baudRate);
-  SerialManager.connect();
+  try {
+    await SerialManager.disconnect();
 
-  console.log(`Connecting to ${port}`);
+    SerialManager.setPort(port);
+    SerialManager.setBaudRate(baudRate);
+    const connected = await SerialManager.connect();
+
+    console.log(`Connected to ${port}: ${connected}`);
+    return connected;
+  } catch (error) {
+    console.error(`Failed to connect to ${port}:`, error);
+    return false;
+  }
 });
 
 ipcMain.handle('serial:disconnect', async (_e) => {
@@ -64,4 +72,10 @@ ipcMain.handle('serial:disconnect', async (_e) => {
   } else {
     console.log(`failed to disconnect or already disconnected`);
   }
+
+  return disconnected;
+});
+
+ipcMain.handle('serial:isConnected', async (_e) => {
+  return SerialManager.getConnectionStatus();
 });

@@ -6,10 +6,14 @@
   <body>
     <div>
       <h1>Serial Monitor</h1>
-      <select id="portSelect"></select>
-      <select id="baudRateSelect"></select>
-      <button id="retry">Retry</button>
-      <button id="connectBtn">Connect</button>
+      <div id="connectionControls" style="display: flex; align-items: center; gap: 10px;">
+        <div id="connectionStatus" style="width: 12px; height: 12px; border-radius: 50%; background-color: red;"></div>
+        <select id="portSelect"></select>
+        <select id="baudRateSelect"></select>
+        <button id="refreshBtn"  >🔄</button>
+        <button id="connectBtn">Connect</button>
+      </div>
+
       <pre id="output"></pre>
     </div>
     <script type="module" src="renderer.js"></script>
