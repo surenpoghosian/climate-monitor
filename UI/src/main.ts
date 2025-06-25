@@ -1,7 +1,7 @@
 import { SerialPort } from 'serialport';
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
-import parseSerialData from '../utils/parseSerialData';
+import parseSerialData from './utils/parseSerialData';
 
 function createWindow() {
   const wndw = new BrowserWindow({

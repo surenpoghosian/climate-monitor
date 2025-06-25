@@ -2,15 +2,20 @@ class DataParser {
   private buffer: Buffer;
 
   constructor() {
-
   }
 
   parse() {
 
   }
 
-  push() {
+  push(): boolean {
 
+    return false;
+  }
+
+  private isComplete(): boolean {
+
+    return false;
   }
 }
 
