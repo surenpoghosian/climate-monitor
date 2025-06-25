@@ -1,4 +1,3 @@
-import { SerialPort } from 'serialport';
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
 import DataManager from './DataManagers/DataManager';

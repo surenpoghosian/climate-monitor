@@ -1,5 +1,4 @@
 import { SerialPort } from "serialport";
-import parseSerialData from "../utils/parseSerialData";
 
 type DataCallback = (data: Buffer) => void;
 
@@ -60,9 +59,7 @@ class SerialManager {
     });
 
     this.portInstance.on('data', (data: Buffer) => {
-      console.log('Arduino says:', { type: typeof data, value: data });
       this.dataCallbacks.forEach(callback => callback(data));
-      // console.log(parseSerialData(data as Buffer));
     });
   }
 
