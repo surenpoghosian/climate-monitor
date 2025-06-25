@@ -1,12 +1,16 @@
 class DataManager {
-  private availableDevices: string[] = [];
-  
+  private availableSerialPorts: string[] = [];
+
   constructor() {
 
   }
 
-  getAvailableDevices () {
-    return this.availableDevices;
+  getAvailableSerialPorts () {
+    return this.availableSerialPorts;
+  }
+
+  setAvailableSerialPorts (portPaths: string[]) {
+    this.availableSerialPorts = portPaths;
   }
 }
 
