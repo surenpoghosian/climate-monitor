@@ -1,8 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import DataManager from './DataManagers/DataManager';
-import parseSerialData from './utils/parseSerialData';
-import SerialManager, { BaudRate } from './DataManagers/SerialManager';
+import SerialManager from './DataManagers/SerialManager';
 
 function createWindow() {
   const wndw = new BrowserWindow({
@@ -27,17 +26,10 @@ app.on('window-all-closed', () => {
 });
 
 async function main () {
-  const serialPorts = await SerialManager.getPortList();
+  const serialPorts = await SerialManager.getPorts();
   const portPaths = serialPorts.map(port => port.path);
 
   DataManager.setAvailableSerialPorts(portPaths);
-
-  // const ports = DataManager.getAvailableSerialPorts();
-
-  // SerialManager.setPort(ports[0]);
-  // SerialManager.setBaudRate(BaudRate.R115200);
-  // SerialManager.connect();
-
 
   // SerialManager.subscribeToUpdates((data) => {
   //   console.log('Buffer data: ', data);
@@ -49,11 +41,27 @@ async function main () {
 main().catch(console.error);
 
 ipcMain.handle('serial:getPorts', async () => {
-  console.log('get ports...')
-  return ['COM1', 'COM2'];
+  return DataManager.getAvailableSerialPorts();
 });
 
-ipcMain.handle('serial:connect', async (_e, port: string) => {
+ipcMain.handle('serial:getBaudRates', async () => {
+  return SerialManager.getBaudRates();
+});
+
+ipcMain.handle('serial:connect', async (_e, port: string, baudRate: number) => {
+  SerialManager.setPort(port);
+  SerialManager.setBaudRate(baudRate);
+  SerialManager.connect();
+
   console.log(`Connecting to ${port}`);
-  return true;
+});
+
+ipcMain.handle('serial:disconnect', async (_e) => {
+  const disconnected = await SerialManager.disconnect();
+
+  if (disconnected) {
+    console.log(`disconnected: ${disconnected}`);
+  } else {
+    console.log(`failed to disconnect or already disconnected`);
+  }
 });

@@ -2,23 +2,8 @@ import { SerialPort } from "serialport";
 
 type DataCallback = (data: Buffer) => void;
 
-export enum BaudRate {
-  R110 = 110,
-  R300 = 300,
-  R600 = 600,
-  R1200 = 1200,
-  R2400 = 2400,
-  R4800 = 4800,
-  R9600 = 9600,
-  R14400 = 14400,
-  R19200 = 19200,
-  R28800 = 28800,
-  R38400 = 38400,
-  R57600 = 57600,
-  R115200 = 115200,
-  R128000 = 128000,
-  R256000 = 256000,
-}
+
+
 class SerialManager {
   private currentPort: string;
   private baudRate: number;
@@ -27,16 +12,21 @@ class SerialManager {
 
   constructor() {}
 
-  async getPortList() {
+  async getPorts() {
     const portList = await SerialPort.list();
     return portList;
+  }
+
+  getBaudRates() {
+    const baudRates = [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200, 128000, 256000];
+    return baudRates;
   }
 
   setPort(port: string) {
     this.currentPort = port;
   }
 
-  setBaudRate(rate: BaudRate) {
+  setBaudRate(rate: number) {
     this.baudRate = rate;
   }
 
@@ -67,16 +57,24 @@ class SerialManager {
     this.dataCallbacks.push(callback);
   }
 
-  disconnect() {
+  async disconnect(): Promise<boolean> {
     if (this.portInstance && this.portInstance.isOpen) {
-      this.portInstance.close((err) => {
-        if (err) {
-          console.error("Error while closing the port", err.message);
-        } else {
-          console.log('serial port closed');
-        }
+      const port = this.portInstance;
+
+      return new Promise((resolve) => {
+        port.close((err) => {
+          if (err) {
+            console.error("Error while closing the port", err.message);
+            resolve(false);
+          } else {
+            console.log('serial port closed');
+            resolve(true);
+          }
+        });
       });
     }
+
+    return true;
   }
 }
 
