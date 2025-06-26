@@ -9,7 +9,7 @@ class SerialManager {
   private baudRate: number;
   private portInstance: SerialPort | null = null;
   private dataCallbacks: DataCallback[] = [];
-  isConnected: boolean = false;
+  private isConnected: boolean = false;
 
   constructor() {}
 
@@ -59,8 +59,18 @@ class SerialManager {
         console.log('Serial port closed');
       });
 
+      let bufferCollector = Buffer.alloc(0);
+
       this.portInstance.on('data', (data: Buffer) => {
-        this.dataCallbacks.forEach(callback => callback(data));
+        bufferCollector = Buffer.concat([bufferCollector, data]);
+
+        while (bufferCollector.length >= 20) {
+          const fullBuffer = Buffer.from(bufferCollector.subarray(0, 20));
+          console.log('<Buffer', fullBuffer.toString('hex').match(/.{1,2}/g)?.join(' '), '>');
+
+          this.dataCallbacks.forEach(cb => cb(fullBuffer));
+          bufferCollector = bufferCollector.subarray(20);
+        }
       });
     });
   }
