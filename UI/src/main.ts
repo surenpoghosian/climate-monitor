@@ -1,18 +1,29 @@
-import { SerialPort } from 'serialport';
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
+import DataManager from './DataManagers/DataManager';
+import SerialManager from './DataManagers/SerialManager';
+import parseSerialData from './utils/parseSerialData';
+
+let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
-  const wndw = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 
-  wndw.loadFile(path.join(__dirname, 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+  
+  // mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);
@@ -21,20 +32,64 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-const port = new SerialPort({
-  path: '/dev/tty.usbmodem21201',
-  baudRate: 115200
+async function main () {
+  const serialPorts = await SerialManager.getPorts();
+  const portPaths = serialPorts.map(port => port.path);
+
+  DataManager.setAvailableSerialPorts(portPaths);
+
+  SerialManager.subscribeToUpdates((data) => {
+    try {
+      const parsedData = parseSerialData(data);
+      
+      // Send data only to our main window if it exists
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('serial:dataReceived', parsedData);
+      }
+    } catch (error) {
+      console.error('Error parsing serial data:', error);
+    }
+  })
+}
+
+main().catch(console.error);
+
+ipcMain.handle('serial:getPorts', async () => {
+  return DataManager.getAvailableSerialPorts();
 });
 
-SerialPort.list().then(ports => {
-  console.log('Available serial ports:');
-  ports.forEach(p => console.log(`- ${p.path}`));
+ipcMain.handle('serial:getBaudRates', async () => {
+  return SerialManager.getBaudRates();
 });
 
-port.on('error', (err) => {
-  console.error('Serial error:', err.message);
+ipcMain.handle('serial:connect', async (_e, port: string, baudRate: number) => {
+  try {
+    await SerialManager.disconnect();
+
+    SerialManager.setPort(port);
+    SerialManager.setBaudRate(baudRate);
+    const connected = await SerialManager.connect();
+
+    console.log(`Connected to ${port}: ${connected}`);
+    return connected;
+  } catch (error) {
+    console.error(`Failed to connect to ${port}:`, error);
+    return false;
+  }
 });
 
-port.on('data', (data) => {
-  console.log('Arduino says:', { type: typeof data, value: data });
+ipcMain.handle('serial:disconnect', async (_e) => {
+  const disconnected = await SerialManager.disconnect();
+
+  if (disconnected) {
+    console.log(`disconnected: ${disconnected}`);
+  } else {
+    console.log(`failed to disconnect or already disconnected`);
+  }
+
+  return disconnected;
+});
+
+ipcMain.handle('serial:isConnected', async (_e) => {
+  return SerialManager.getConnectionStatus();
 });

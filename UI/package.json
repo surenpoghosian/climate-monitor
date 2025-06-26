@@ -12,14 +12,15 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/node": "^24.0.4",
     "concurrently": "^9.2.0",
     "electron": "^36.5.0",
     "electron-reload": "^2.0.0-alpha.1"
   },
   "dependencies": {
-    "@types/node": "^24.0.3",
     "serialport": "^13.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
-  }
+  },
+  "typings": "global.d.ts"
 }
