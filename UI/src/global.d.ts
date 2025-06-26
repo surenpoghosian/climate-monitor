@@ -6,6 +6,8 @@ declare global {
       connect: (port: string, baudRate: number) => Promise<boolean>;
       disconnect: () => Promise<boolean>;
       isConnected: () => Promise<boolean>;
+      onDataReceived: (callback: (data: any) => void) => void;
+      removeDataListener: () => void;
     };
   }
 }

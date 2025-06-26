@@ -121,4 +121,35 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateConnectionStatus();
   refreshPorts();
+
+
+  window.serialAPI.onDataReceived((data) => {
+    updateDataDisplay(data);
+  });
+
+  function updateDataDisplay(data: any) {
+    const dataDisplay = document.getElementById('dataDisplay');
+    const temperatureEl = document.getElementById('temperature');
+    const humidityEl = document.getElementById('humidity');
+    const pressureEl = document.getElementById('pressure');
+    const windSpeedEl = document.getElementById('windSpeed');
+    const windDirectionEl = document.getElementById('windDirection');
+    const deviceIdEl = document.getElementById('deviceId');
+    const lastUpdateEl = document.getElementById('lastUpdate');
+
+    if (!dataDisplay || !temperatureEl || !humidityEl || !pressureEl || !windSpeedEl || !windDirectionEl || !deviceIdEl || !lastUpdateEl) {
+      console.error('Data display elements not found');
+      return;
+    }
+
+    temperatureEl.textContent = data.temperature.toFixed(1);
+    humidityEl.textContent = data.humidity.toString();
+    pressureEl.textContent = data.pressure.toFixed(1);
+    windSpeedEl.textContent = data.windSpeed.toFixed(1);
+    windDirectionEl.textContent = data.headingDegrees.toFixed(0);
+    deviceIdEl.textContent = data.deviceAddress.toString();
+    lastUpdateEl.textContent = new Date().toLocaleTimeString();
+
+    console.log('Updated display with data:', data);
+  }
 });

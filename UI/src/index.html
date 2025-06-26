@@ -2,19 +2,51 @@
 <html>
   <head>
     <title>Climate Monitor</title>
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <div>
-      <h1>Serial Monitor</h1>
-      <div id="connectionControls" style="display: flex; align-items: center; gap: 10px;">
+    <div class="container">
+      <h1>Climate Monitor</h1>
+      <div id="connectionControls">
         <div id="connectionStatus" style="width: 12px; height: 12px; border-radius: 50%; background-color: red;"></div>
         <select id="portSelect"></select>
         <select id="baudRateSelect"></select>
-        <button id="refreshBtn"  >🔄</button>
+        <button id="refreshBtn">🔄</button>
         <button id="connectBtn">Connect</button>
       </div>
 
-      <pre id="output"></pre>
+      <div id="dataDisplay">
+        <div class="data-grid">
+          <div class="data-card">
+            <div class="data-label">Temperature</div>
+            <div class="data-value"><span id="temperature">--</span> °C</div>
+          </div>
+          <div class="data-card">
+            <div class="data-label">Humidity</div>
+            <div class="data-value"><span id="humidity">--</span> %</div>
+          </div>
+          <div class="data-card">
+            <div class="data-label">Pressure</div>
+            <div class="data-value"><span id="pressure">--</span> hPa</div>
+          </div>
+          <div class="data-card">
+            <div class="data-label">Wind Speed</div>
+            <div class="data-value"><span id="windSpeed">--</span> m/s</div>
+          </div>
+          <div class="data-card">
+            <div class="data-label">Wind Direction</div>
+            <div class="data-value"><span id="windDirection">--</span>°</div>
+          </div>
+          <div class="data-card">
+            <div class="data-label">Device ID</div>
+            <div class="data-value"><span id="deviceId">--</span></div>
+          </div>
+          <div class="data-card">
+            <div class="data-label">Last Update</div>
+            <div class="data-value"><span id="lastUpdate">--</span></div>
+          </div>
+        </div>
+      </div>
     </div>
     <script type="module" src="renderer.js"></script>
   </body>

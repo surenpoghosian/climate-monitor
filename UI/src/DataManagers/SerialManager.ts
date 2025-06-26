@@ -1,4 +1,5 @@
 import { SerialPort } from "serialport";
+import parseSerialData from "../utils/parseSerialData";
 
 type DataCallback = (data: Buffer) => void;
 
@@ -10,6 +11,7 @@ class SerialManager {
   private portInstance: SerialPort | null = null;
   private dataCallbacks: DataCallback[] = [];
   private isConnected: boolean = false;
+  private bufferCollector: Buffer = Buffer.alloc(0);
 
   constructor() {}
 
@@ -59,17 +61,17 @@ class SerialManager {
         console.log('Serial port closed');
       });
 
-      let bufferCollector = Buffer.alloc(0);
-
       this.portInstance.on('data', (data: Buffer) => {
-        bufferCollector = Buffer.concat([bufferCollector, data]);
+        this.bufferCollector = Buffer.concat([this.bufferCollector, data]);
 
-        while (bufferCollector.length >= 20) {
-          const fullBuffer = Buffer.from(bufferCollector.subarray(0, 20));
+        while (this.bufferCollector.length >= 20) {
+          const fullBuffer = Buffer.from(this.bufferCollector.subarray(0, 20));
           console.log('<Buffer', fullBuffer.toString('hex').match(/.{1,2}/g)?.join(' '), '>');
 
           this.dataCallbacks.forEach(cb => cb(fullBuffer));
-          bufferCollector = bufferCollector.subarray(20);
+          this.bufferCollector = this.bufferCollector.subarray(20);
+
+          console.log({parsedData: parseSerialData(fullBuffer)});
         }
       });
     });

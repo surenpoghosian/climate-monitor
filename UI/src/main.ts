@@ -2,9 +2,12 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import DataManager from './DataManagers/DataManager';
 import SerialManager from './DataManagers/SerialManager';
+import parseSerialData from './utils/parseSerialData';
+
+let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
-  const wndw = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -14,9 +17,13 @@ function createWindow() {
     }
   });
 
-  wndw.loadFile(path.join(__dirname, 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, 'index.html'));
   
-  // wndw.webContents.openDevTools();
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+  
+  // mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);
@@ -31,11 +38,18 @@ async function main () {
 
   DataManager.setAvailableSerialPorts(portPaths);
 
-  // SerialManager.subscribeToUpdates((data) => {
-  //   console.log('Buffer data: ', data);
-  //   const parsed = parseSerialData(data);
-  //   console.log('Parsed data: ', parsed);
-  // })
+  SerialManager.subscribeToUpdates((data) => {
+    try {
+      const parsedData = parseSerialData(data);
+      
+      // Send data only to our main window if it exists
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('serial:dataReceived', parsedData);
+      }
+    } catch (error) {
+      console.error('Error parsing serial data:', error);
+    }
+  })
 }
 
 main().catch(console.error);
