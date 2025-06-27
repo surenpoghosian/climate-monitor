@@ -13,7 +13,7 @@
 #define DHT_PIN 4
 #define PHOTORESISTANCE_PIN A1
 #define DEVICE_ADDRESS 0x42
-#define PHOTORESISTOR_THRESHOLD 200
+#define PHOTORESISTOR_THRESHOLD 300
 #define SPEED_CALIBRATION 10000
 
 DHT11 dht11(DHT_PIN);
@@ -158,17 +158,17 @@ void setup() {
 SensorsValues sensorsValues;
 void loop() {
 
-  // int photores = sensorsValues.getPhotoresistance();
-  // if (photoresistor_last_on == 0){
-  //   if(photores > PHOTORESISTOR_THRESHOLD){
-  //     photoresistor_last_on = millis();
-  //   }
-  // } else {
-  //   if(photores < PHOTORESISTOR_THRESHOLD){
-  //     speed = (float)SPEED_CALIBRATION/(millis()-photoresistor_last_on);
-  //     photoresistor_last_on = 0;
-  //   }
-  // }
+  int photores = sensorsValues.getPhotoresistance();
+  if (photoresistor_last_on == 0){
+    if(photores > PHOTORESISTOR_THRESHOLD){
+      photoresistor_last_on = millis();
+    }
+  } else {
+    if(photores < PHOTORESISTOR_THRESHOLD){
+      speed = (float)SPEED_CALIBRATION/(millis()-photoresistor_last_on);
+      photoresistor_last_on = 0;
+    }
+  }
 
 
   loops++;

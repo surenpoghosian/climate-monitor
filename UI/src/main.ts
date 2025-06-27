@@ -42,7 +42,6 @@ async function main () {
     try {
       const parsedData = parseSerialData(data);
       
-      // Send data only to our main window if it exists
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('serial:dataReceived', parsedData);
       }
