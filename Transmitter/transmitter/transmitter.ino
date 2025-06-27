@@ -33,13 +33,15 @@ uint8_t address[6] = "1Node";
 byte closingTag[2] = { 0xD5, 0xB3 };
 byte payload[20];
 
-void floatToByteArray(float f, byte* ret) {
-  unsigned int asInt = *((int*)&f);
+union parsedData{
+ uint8_t b[4];
+ float f;
+};
 
-  int i;
-  for (i = 0; i < 4; i++) {
-    ret[i] = (asInt >> 8 * i) & 0xFF;
-  }
+void floatToByteArray(float f, byte* ret) {
+  union parsedData data;
+  data.f = f;
+  memcpy(ret, data.b, 4);
 }
 
 class SensorsSetup {
@@ -156,17 +158,17 @@ void setup() {
 SensorsValues sensorsValues;
 void loop() {
 
-int photores = sensorsValues.getPhotoresistance();
-  if (photoresistor_last_on == 0){
-    if(photores > PHOTORESISTOR_THRESHOLD){
-      photoresistor_last_on = millis();
-    }
-  } else {
-    if(photores < PHOTORESISTOR_THRESHOLD){
-      speed = (float)SPEED_CALIBRATION/(millis()-photoresistor_last_on);
-      photoresistor_last_on = 0;
-    }
-  }
+  // int photores = sensorsValues.getPhotoresistance();
+  // if (photoresistor_last_on == 0){
+  //   if(photores > PHOTORESISTOR_THRESHOLD){
+  //     photoresistor_last_on = millis();
+  //   }
+  // } else {
+  //   if(photores < PHOTORESISTOR_THRESHOLD){
+  //     speed = (float)SPEED_CALIBRATION/(millis()-photoresistor_last_on);
+  //     photoresistor_last_on = 0;
+  //   }
+  // }
 
 
   loops++;
