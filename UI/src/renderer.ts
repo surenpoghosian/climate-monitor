@@ -12,7 +12,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('refreshBtn');
 
   if(!selectPort || !selectBaudRate || !connectBtn || !connectionStatus || !refreshBtn) {
-    console.error('Required elements not found');
+    console.error('elements not found');
     return;
   }
 
@@ -90,12 +90,26 @@ window.addEventListener('DOMContentLoaded', () => {
   function refreshPorts() {
     window.serialAPI.getPorts().then((ports) => {
       const currentSelection = (selectPort as HTMLSelectElement).value;
-      selectPort!.innerHTML = ports.map((port) => `<option value="${port}">${port}</option>`).join('');
       
+      const currentPorts = Array.from((selectPort as HTMLSelectElement).options).map(option => option.value).filter(value => value !== "");
+      const portsChanged = JSON.stringify(ports.sort()) !== JSON.stringify(currentPorts.sort());
+      
+      if (portsChanged) {
+        if (ports.length === 0) {
+          selectPort!.innerHTML = '<option value="">No ports available</option>';
+        } else {
+          selectPort!.innerHTML = ports.map((port) => `<option value="${port}">${port}</option>`).join('');
+        }
 
-      if (ports.includes(currentSelection)) {
-        (selectPort as HTMLSelectElement).value = currentSelection;
+        if (ports.includes(currentSelection)) {
+          (selectPort as HTMLSelectElement).value = currentSelection;
+        }
+
+        clearDisplayValues();
       }
+
+    }).catch((error) => {
+      console.error('Error', error);
     });
   }
 
@@ -121,11 +135,55 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateConnectionStatus();
   refreshPorts();
+  let autoRefreshInterval = setInterval(() => {
+    window.serialAPI.isConnected().then((connected) => {
+      if (!connected) {
+        refreshPorts();
+      }
+    });
+  }, 3000);
 
+  window.addEventListener('focus', () => {
+    window.serialAPI.isConnected().then((connected) => {
+      if (!connected) {
+        refreshPorts();
+      }
+    });
+  });
+
+  window.addEventListener('beforeunload', () => {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+    }
+  });
 
   window.serialAPI.onDataReceived((data) => {
     updateDataDisplay(data);
   });
+
+  function clearDisplayValues() {
+    const dataDisplay = document.getElementById('dataDisplay');
+    const temperatureEl = document.getElementById('temperature');
+    const humidityEl = document.getElementById('humidity');
+    const pressureEl = document.getElementById('pressure');
+    const windSpeedEl = document.getElementById('windSpeed');
+    const windDirectionEl = document.getElementById('windDirection');
+    const deviceIdEl = document.getElementById('deviceId');
+    const lastUpdateEl = document.getElementById('lastUpdate');
+
+    if (!dataDisplay || !temperatureEl || !humidityEl || !pressureEl || !windSpeedEl || !windDirectionEl || !deviceIdEl || !lastUpdateEl) {
+      console.error('elements not found');
+      return;
+    }
+
+    temperatureEl.textContent = '--';
+    humidityEl.textContent = '--';
+    pressureEl.textContent = '--';
+    windSpeedEl.textContent = '--';
+    windDirectionEl.textContent = '--';
+    deviceIdEl.textContent = '--';
+    lastUpdateEl.textContent = '--';
+  }
 
   function updateDataDisplay(data: any) {
     const dataDisplay = document.getElementById('dataDisplay');
@@ -138,7 +196,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const lastUpdateEl = document.getElementById('lastUpdate');
 
     if (!dataDisplay || !temperatureEl || !humidityEl || !pressureEl || !windSpeedEl || !windDirectionEl || !deviceIdEl || !lastUpdateEl) {
-      console.error('Data display elements not found');
+      console.error('elements not found');
       return;
     }
 
@@ -150,6 +208,6 @@ window.addEventListener('DOMContentLoaded', () => {
     deviceIdEl.textContent = data.deviceAddress.toString();
     lastUpdateEl.textContent = new Date().toLocaleTimeString();
 
-    console.log('Updated display with data:', data);
+    console.log('updated data:', data);
   }
 });
