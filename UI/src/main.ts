@@ -54,7 +54,12 @@ async function main () {
 main().catch(console.error);
 
 ipcMain.handle('serial:getPorts', async () => {
-  return DataManager.getAvailableSerialPorts();
+    const serialPorts = await SerialManager.getPorts();
+    const portPaths = serialPorts.map(port => port.path);
+    
+    DataManager.setAvailableSerialPorts(portPaths);
+    
+    return portPaths;
 });
 
 ipcMain.handle('serial:getBaudRates', async () => {

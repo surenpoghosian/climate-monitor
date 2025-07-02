@@ -38,6 +38,8 @@ class SerialManager {
       throw new Error('Port and baud rate must be set before connecting');
     }
 
+    this.bufferCollector = Buffer.alloc(0);
+
     return new Promise((resolve, reject) => {
       this.portInstance = new SerialPort({
         path: this.currentPort,
@@ -52,13 +54,14 @@ class SerialManager {
 
       this.portInstance.on('error', (err) => {
         this.isConnected = false;
+        this.bufferCollector = Buffer.alloc(0);
         console.error('Serial error:', err.message);
         reject(err);
       });
 
       this.portInstance.on('close', () => {
         this.isConnected = false;
-        console.log('Serial port closed');
+        this.bufferCollector = Buffer.alloc(0);
       });
 
       this.portInstance.on('data', (data: Buffer) => {
@@ -68,10 +71,16 @@ class SerialManager {
           const fullBuffer = Buffer.from(this.bufferCollector.subarray(0, 20));
           console.log('<Buffer', fullBuffer.toString('hex').match(/.{1,2}/g)?.join(' '), '>');
 
-          this.dataCallbacks.forEach(cb => cb(fullBuffer));
+          // try {
+          //   const parsedData = parseSerialData(fullBuffer);
+          //   console.log('Valid packet received:', parsedData);
+            this.dataCallbacks.forEach(cb => cb(fullBuffer));
+          // } catch (error) {
+          //   console.warn('Invalid packet discarded:', error instanceof Error ? error.message : String(error));
+          //   // Continue processing, invalid packets are discarded
+          // }
+          
           this.bufferCollector = this.bufferCollector.subarray(20);
-
-          console.log({parsedData: parseSerialData(fullBuffer)});
         }
       });
     });
@@ -97,7 +106,7 @@ class SerialManager {
             resolve(false);
           } else {
             this.isConnected = false;
-            console.log('serial port closed');
+            this.bufferCollector = Buffer.alloc(0);
             resolve(true);
           }
         });
