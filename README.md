@@ -16,9 +16,10 @@ It lets you to observe, transfer and visualize the properties below...
 - nrf24l01+ (RX/TX)
 </br>
 
-<img src="https://github.com/user-attachments/assets/3dc29071-c091-4a4d-888c-885b36adb11b" width="100%" />
+<img src="https://github.com/user-attachments/assets/cd3910e1-687a-4f86-a3d4-1d05512ed58a" width="100%" />
 
 <p align="center">
+
   <img src="https://github.com/user-attachments/assets/c3b35caf-a48c-485e-8089-a12f563ccdef" width="45%" />
   <img src="https://github.com/user-attachments/assets/64b7c3ba-d167-465b-af63-d1de8b6361e4" width="45%" />
 <img width="45%" alt="Screenshot 2025-06-26 at 15 23 46" src="https://github.com/user-attachments/assets/253acd59-98a0-4afc-b7eb-d03711f684c5" />
